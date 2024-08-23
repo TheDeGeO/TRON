@@ -1,0 +1,14 @@
+# Binaries and obj folders
+bin/
+obj/
+
+# Visual Studio settings
+.vs/
+
+# User files
+*.user
+*.suo
+
+# Other files to ignore
+Thumbs.db
+Desktop.ini
