@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.002.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TRON.Avalonia", "TRON.Avalonia.csproj", "{0BA4447D-D321-4159-BC4F-E204871CF1A6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TRON.Avalonia", "TRON.Avalonia.csproj", "{72F2A859-46C8-463B-9464-DF32FC6B1428}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,10 +11,10 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{0BA4447D-D321-4159-BC4F-E204871CF1A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0BA4447D-D321-4159-BC4F-E204871CF1A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0BA4447D-D321-4159-BC4F-E204871CF1A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0BA4447D-D321-4159-BC4F-E204871CF1A6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{72F2A859-46C8-463B-9464-DF32FC6B1428}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{72F2A859-46C8-463B-9464-DF32FC6B1428}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{72F2A859-46C8-463B-9464-DF32FC6B1428}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{72F2A859-46C8-463B-9464-DF32FC6B1428}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
