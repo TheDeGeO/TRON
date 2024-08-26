@@ -68,7 +68,7 @@ namespace TRON.Avalonia
         private void MovePlayer(object? sender, EventArgs e)
         {
             _tilemap.Draw(Canvas);
-            direct = _player.Move(direct, Canvas);
+            direct = _player.Move(direct, Canvas, _tilemap);
         }
     }
 }

@@ -1,11 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using Avalonia;
+using Avalonia.Animation;
 using Avalonia.Controls;
 using Avalonia.Controls.Platform.Surfaces;
 using Avalonia.Controls.Shapes;
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 
 
 namespace TRON.Avalonia{
@@ -16,6 +19,9 @@ namespace TRON.Avalonia{
         //Tilemap size
         public const int MAP_WIDTH = 64;
         public const int MAP_HEIGHT = 44;
+
+        public const int itemAmount = 40;
+        public static readonly string[] itemTypes = {"fuel", "tail", "bomb", "shield", "speed"};
 
         public class Tile{
             public int X {get; set;}
@@ -52,7 +58,7 @@ namespace TRON.Avalonia{
         }
 
         public class Tilemap{
-            private Tile[,] _tiles;
+            public Tile[,] _tiles;
             public int Width {get; set;}
             public int Height {get; set;}
 
@@ -70,6 +76,8 @@ namespace TRON.Avalonia{
                     }
                 }
 
+                GenerateItems();
+
                 InitializeTileNeighbors();
             }
 
@@ -86,6 +94,17 @@ namespace TRON.Avalonia{
                         if (y > 0) tile.Top = _tiles[x, y-1];
                         if (y < Height - 1) tile.Bottom = _tiles[x, y+1];
                     }
+                }
+            }
+
+            public void GenerateItems()
+            {
+                for (int i = 0; i < itemAmount; i++)
+                {
+                    int x = Random.Shared.Next(0, Width);
+                    int y = Random.Shared.Next(0, Height);
+                    string type = itemTypes[Random.Shared.Next(0, itemTypes.Length)];
+                    _tiles[x, y] = new Item(x, y, type);
                 }
             }
 
@@ -112,18 +131,12 @@ namespace TRON.Avalonia{
                 {
                     for (int y = 0; y < Height; y++)
                     {
-                        var tile = GetTile(x, y);
-                        var rect = new Rectangle()
+                        _tiles[x, y].Draw(canvas, Brushes.Black);
+
+                        if (_tiles[x, y] is Item item)
                         {
-                            Width = MAP.TILE_SIZE,
-                            Height = MAP.TILE_SIZE,
-                            Fill = Brushes.Black, // Replace with your desired tile color
-                            Stroke = Brushes.White, // Replace with your desired tile border color
-                            StrokeThickness = 0.2,
-                        };
-                        Canvas.SetLeft(rect, x * MAP.TILE_SIZE);
-                        Canvas.SetTop(rect, y * MAP.TILE_SIZE);
-                        canvas?.Children.Add(rect);
+                            item.Draw(canvas);
+                        }
                     }
                 }
             }
@@ -133,8 +146,8 @@ namespace TRON.Avalonia{
             public Tile Position {get; set;}
             public List<Tile> Tail {get; set;}
             public int slowness = 250;  
-            public int fuel = 30;
-            //public Item[,]? items;
+            public double fuel = 30;
+            public List<Item> items = new();
 
             public Player(Tile position)
             {
@@ -174,8 +187,11 @@ namespace TRON.Avalonia{
             }
 
             //1 = up, -1 = down, 2 = left, -2 = right
-            public int Move(int direction, Canvas? canvas)
+            public int Move(int direction, Canvas? canvas, Tilemap tilemap)
             {
+                Tail.RemoveAt(Tail.Count - 1);
+                Tail.Insert(0, Position);
+
                 bool moved = false;
                 while (!moved)
                 {
@@ -216,8 +232,26 @@ namespace TRON.Avalonia{
                     }
                 }
 
-                Tail.RemoveAt(Tail.Count - 1);
-                Tail.Insert(0, Position);
+                if (Position is Item item)
+                {
+                    int x = item.X;
+                    int y = item.Y;
+                    tilemap._tiles[x, y] = item.Take(this);
+                }
+
+                if (fuel > 0)
+                {
+                    fuel -= 0.2;
+                }
+                else
+                {
+                    Die();
+                }
+
+                if (Tail.Contains(Position))
+                {
+                    Die();
+                }
 
                 Draw(canvas);
 
@@ -226,8 +260,8 @@ namespace TRON.Avalonia{
 
             public void Die()
             {
-                Environment.Exit(0);
                 Console.WriteLine("YOU DIED!");
+                Environment.Exit(0);
             }
         }
 
@@ -237,10 +271,14 @@ namespace TRON.Avalonia{
 
             public Item(int x, int y, string type) : base(x, y)
             {
+                if (!itemTypes.Contains(type))
+                {
+                    throw new ArgumentException("Invalid item type");
+                }
                 Type = type;
             }
 
-            public void Take(Player player)
+            public Tile Take(Player player)
             {
                 switch (Type)
                 {
@@ -251,13 +289,61 @@ namespace TRON.Avalonia{
                         int addition = Random.Shared.Next(1, 3);
                         for (int i = 0; i < addition; i++)
                         {
-                            player.Tail.Insert(0, player.Tail[0].Bottom!);
+                            player.Tail.Add(player.Tail[0]);
                         }
                         break;
                     case "bomb" :
                         player.Die();
                         break;
+                    default:
+                        player.items.Add(this);
+                        break;
                 }
+
+                Tile tile = new Tile(X, Y);
+                tile.Top = this.Top;
+                tile.Bottom = this.Bottom;
+                tile.Left = this.Left;
+                tile.Right = this.Right;
+                return tile;
+            }
+
+            public void Draw(Canvas? canvas)
+            {
+                IBrush? fill = null;
+                switch (Type)
+                    {
+                        case "fuel":
+                            fill = Brushes.Green;
+                            break;
+                        case "tail":
+                            fill = Brushes.Blue;
+                            break;
+                        case "bomb":
+                            fill = Brushes.Red;
+                            break;
+                        case "shield":
+                            fill = Brushes.Orange;
+                            break;
+                        case "speed":
+                            fill = Brushes.Purple;
+                            break;
+                        default:
+                            fill = Brushes.Yellow;
+                            break;
+                    }
+
+                var rect = new Rectangle()
+                {
+                    Width = MAP.TILE_SIZE,
+                    Height = MAP.TILE_SIZE,
+                    Fill = fill, 
+                    Stroke = Brushes.White, // Replace with your desired item border color
+                    StrokeThickness = 0.2,
+                };
+                Canvas.SetLeft(rect, X * MAP.TILE_SIZE);
+                Canvas.SetTop(rect, Y * MAP.TILE_SIZE);
+                canvas?.Children.Add(rect);
             }
         }
     }
