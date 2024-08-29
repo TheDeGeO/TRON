@@ -9,6 +9,8 @@ using Avalonia.Media;
 using Avalonia.Metadata;
 using TRON;
 using System.Runtime.InteropServices;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace TRON.Avalonia
 {
@@ -20,6 +22,7 @@ namespace TRON.Avalonia
         private int direct = 1;
         private Canvas? Canvas;
         private DispatcherTimer _timer;
+        private List<MAP.Botcito> _botcitos = new List<MAP.Botcito>();
 
         public MainWindow()
         {
@@ -54,6 +57,12 @@ namespace TRON.Avalonia
 
             warning.Foreground = new SolidColorBrush(Colors.Red);
             warning.Margin = new Thickness(10);
+
+            //Add 10 botcitos
+            for (int i = 0; i < 10; i++)
+            {
+                _botcitos.Add(new MAP.Botcito(_tilemap.GetRandomTile(), 5));
+            }
 
         }
 
@@ -112,6 +121,16 @@ namespace TRON.Avalonia
                 warning.Text = "DANGER! FUEL LOW!";
             }
             else warning.Text = "";
+
+            foreach (MAP.Botcito botcito in _botcitos)
+            {
+                if (botcito.body.Count > 0)
+                {
+                    botcito.Move(_botcitos, _player.Tail);
+                    botcito.Draw(Canvas);
+                }
+                
+            }
             
         }
 

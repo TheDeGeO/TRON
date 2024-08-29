@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Data.Common;
 using System.Linq;
+using System.Reflection;
 using Avalonia;
 using Avalonia.Animation;
 using Avalonia.Controls;
@@ -12,6 +13,7 @@ using Avalonia.Controls.Platform.Surfaces;
 using Avalonia.Controls.Shapes;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
+using Avalonia.Remote.Protocol.Input;
 
 
 namespace TRON.Avalonia{
@@ -134,6 +136,13 @@ namespace TRON.Avalonia{
                 int CenterX = MAP_WIDTH/2;
                 int CenterY = MAP_HEIGHT/2;
                 return GetTile(CenterX, CenterY);
+            }
+
+            public Tile GetRandomTile()
+            {
+                int x = Random.Shared.Next(0, Width);
+                int y = Random.Shared.Next(0, Height);
+                return GetTile(x, y);
             }
 
             public void Draw(Canvas? canvas)
@@ -423,6 +432,107 @@ namespace TRON.Avalonia{
                 Canvas.SetLeft(rect, X * MAP.TILE_SIZE);
                 Canvas.SetTop(rect, Y * MAP.TILE_SIZE);
                 canvas?.Children.Add(rect);
+            }
+        }
+
+        public class Botcito{
+            public List<Tile> body = new List<Tile>();
+
+            public Botcito(Tile head, int length)
+            {
+                body.Add(head);
+
+                for (int i = 0; i < length; i++)
+                {
+                    body.Add(head.Bottom!);
+                }
+            }
+
+            public void Draw(Canvas? canvas)
+            {
+                var isHead = true;
+                foreach (var tile in body)
+                {
+                    if (isHead)
+                    {
+                        tile.Draw(canvas, Brushes.White);
+                        isHead = false;
+                    }
+                    else
+                    {
+                        tile.Draw(canvas, Brushes.Aquamarine);
+                    }
+                }
+            }
+
+            public void Move(List<Botcito> botcitos, List<Tile> player)
+            {
+                if (!botcitos.Contains(this)) return;
+
+                var newHead = body[0];
+                var moved = false;
+                var tries = 0;
+                while (!moved)
+                {
+                    if (tries > 5) moved = true;
+                    tries++;
+
+                    int direction = Random.Shared.Next(0, 4);
+
+                    if (body[0] == null)
+                    {
+                        // Handle the case where body[0] is null
+                        Die();
+                        return;
+                    }
+
+                    switch (direction)
+                    {
+                        case 0:
+                            newHead = body[0].Top;
+                            break;
+                        case 1:
+                            newHead = body[0].Bottom;
+                            break;
+                        case 2:
+                            newHead = body[0].Left;
+                            break;
+                        case 3:
+                            newHead = body[0].Right;
+                            break;
+                    }
+
+                    if (newHead == null) continue;
+
+                    // Check for collisions with own body
+                    if (body.Contains(newHead)) continue;
+
+                    // Check for collisions with other bots
+                    foreach (var bot in botcitos)
+                    {
+                        if (bot.body.Contains(newHead)) continue;
+                    }
+
+                    // Check for collisions with player (this makes them impossible to kill so i just make them die)
+                    if (player.Contains(newHead)) break;
+
+                    // Move the bot
+                    body.Insert(0, newHead);
+                    body.RemoveAt(body.Count - 1);
+                    moved = true;
+                }
+                if (!moved)
+                {
+                    Die();
+                    return;
+                }
+            }
+
+            public void Die()
+            {
+                body.Clear();
+                //botcitos.Remove(this);
+                Console.WriteLine("A botcito died!");
             }
         }
     }
