@@ -8,6 +8,7 @@ using Avalonia.Threading;
 using Avalonia.Media;
 using Avalonia.Metadata;
 using TRON;
+using System.Runtime.InteropServices;
 
 namespace TRON.Avalonia
 {
@@ -19,29 +20,41 @@ namespace TRON.Avalonia
         private int direct = 1;
         private Canvas? Canvas;
         private DispatcherTimer _timer;
-        private int playerSlowness = 100;
 
         public MainWindow()
         {
             InitializeComponent();
 
-            Width = MAP.MAP_WIDTH * MAP.TILE_SIZE;
+            Width = (MAP.MAP_WIDTH + 15) * MAP.TILE_SIZE;
             Height = MAP.MAP_HEIGHT * MAP.TILE_SIZE;
 
             CanResize = false;
 
-            _tilemap = new MAP.Tilemap(MAP.MAP_WIDTH, MAP.MAP_HEIGHT);
+            _tilemap = new MAP.Tilemap(MAP.MAP_WIDTH, MAP.MAP_HEIGHT, (240, 0, 0, 0));
             _centerTile = _tilemap.GetCenter();
             _player = new MAP.Player(_centerTile);
 
             Canvas = this.FindControl<Canvas>("TilemapCanvas");
+
+            Background = new SolidColorBrush(Colors.Black);
+
             _tilemap.Draw(Canvas);
             _player.Draw(Canvas);
 
             KeyDown += MainWindow_KeyDown;
 
-            _timer = new DispatcherTimer(TimeSpan.FromMilliseconds(playerSlowness), DispatcherPriority.Normal, MovePlayer);
+            _timer = new DispatcherTimer(TimeSpan.FromMilliseconds(_player.slowness), DispatcherPriority.Normal, EventHandler);
             _timer.Start();
+
+            dataText.Foreground = new SolidColorBrush(Colors.White);
+            dataText.Margin = new Thickness(10);
+
+            itemsText.Foreground = new SolidColorBrush(Colors.White);
+            itemsText.Margin = new Thickness(10);
+
+            warning.Foreground = new SolidColorBrush(Colors.Red);
+            warning.Margin = new Thickness(10);
+
         }
 
         private void MainWindow_KeyDown(object? sender, KeyEventArgs e)
@@ -63,12 +76,44 @@ namespace TRON.Avalonia
             {
                 direct = -2;
             }
+
+            if (e.Key == Key.Space && _player.items.Count > 0) 
+            {
+                _player.items.PopUse(_player);
+            }
+
+            if (e.Key == Key.Q)
+            {
+                _player.items.Change();
+            }
+
+
         }
 
-        private void MovePlayer(object? sender, EventArgs e)
+        private void EventHandler(object? sender, EventArgs e)
         {
             _tilemap.Draw(Canvas);
             direct = _player.Move(direct, Canvas, _tilemap);
+
+            dataText.Text = $"Fuel: {_player.fuel} \nTail: {_player.Tail.Count} \nSlowness: {_player.slowness} \nShield: {_player.shield}";
+
+            string itemString = "Items:\n";
+
+            foreach (MAP.Item item in _player.items)
+            {
+                itemString += item.Type + "\n";
+            }
+            itemsText.Text = itemString;
+
+            _timer.Interval = TimeSpan.FromMilliseconds(_player.slowness);
+
+            if (_player.fuel <= 10)
+            {
+                warning.Text = "DANGER! FUEL LOW!";
+            }
+            else warning.Text = "";
+            
         }
+
     }
 }

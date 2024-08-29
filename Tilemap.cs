@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
+using System.Data.Common;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using Avalonia;
 using Avalonia.Animation;
 using Avalonia.Controls;
+using Avalonia.Controls.Converters;
 using Avalonia.Controls.Platform.Surfaces;
 using Avalonia.Controls.Shapes;
 using Avalonia.Media;
@@ -17,10 +20,11 @@ namespace TRON.Avalonia{
         //Tile size in pixels
         public const int TILE_SIZE = 16;
         //Tilemap size
-        public const int MAP_WIDTH = 64;
+        public const int MAP_WIDTH = 64 - 15;
         public const int MAP_HEIGHT = 44;
 
         public const int itemAmount = 40;
+        public const int defaultSlowness = 150;
         public static readonly string[] itemTypes = {"fuel", "tail", "bomb", "shield", "speed"};
 
         public class Tile{
@@ -61,11 +65,19 @@ namespace TRON.Avalonia{
             public Tile[,] _tiles;
             public int Width {get; set;}
             public int Height {get; set;}
+            public int leftMargin = 0;
+            public int topMargin = 0;
+            public int rightMargin = 0;
+            public int bottomMargin = 0; 
 
-            public Tilemap(int width, int height)
+            public Tilemap(int width, int height, (int, int, int, int) margins)
             {
                 Width = width;
                 Height = height;
+                leftMargin = margins.Item1;
+                topMargin = margins.Item2;
+                rightMargin = margins.Item3;
+                bottomMargin = margins.Item4;
                 _tiles = new Tile[width, height];
 
                 for (int x = 0; x < Width; x++)
@@ -127,6 +139,7 @@ namespace TRON.Avalonia{
             public void Draw(Canvas? canvas)
             {
                 canvas?.Children.Clear();
+                canvas!.Margin = new Thickness(leftMargin, topMargin, rightMargin, bottomMargin); 
                 for (int x = 0; x < Width; x++)
                 {
                     for (int y = 0; y < Height; y++)
@@ -141,13 +154,48 @@ namespace TRON.Avalonia{
                 }
             }
         }
+        
+        public class ItemStack<T> : Stack<T> where T : Item
+        {
+            public delegate void BeforePopHandler(T elemento);
+            public event BeforePopHandler? BeforePop;
 
+            public T PopUse(Player player)
+            {
+                T item = base.Peek();
+                item.Use(player);
+                return base.Pop();
+            }
+
+            public void Change()
+            {
+                if (Count <= 1) return; // No need to change if there's 0 or 1 element.
+
+                // Create a copy of the current items.
+                var topItem = Pop();    
+                var tmpStack = new Stack<T>();
+                var stackSize = Count;
+                for (int i = 0; i < stackSize; i++)
+                {
+                    tmpStack.Push(Pop());
+                }
+                Push(topItem);
+                stackSize = tmpStack.Count;
+                for (int i = 0; i < stackSize; i++)
+                {
+                    Push(tmpStack.Pop());
+                }
+            }
+
+
+        }
         public class Player{
             public Tile Position {get; set;}
             public List<Tile> Tail {get; set;}
-            public int slowness = 250;  
+            public int slowness = defaultSlowness;  
+            public int shield = 0;
             public double fuel = 30;
-            public List<Item> items = new();
+            public ItemStack<Item> items = new();
 
             public Player(Tile position)
             {
@@ -242,15 +290,26 @@ namespace TRON.Avalonia{
                 if (fuel > 0)
                 {
                     fuel -= 0.2;
+                    fuel = Math.Round(fuel, 1);
                 }
-                else
+                else if (fuel <= 0 && shield <= 0)
                 {
                     Die();
                 }
 
-                if (Tail.Contains(Position))
+                if (Tail.Contains(Position) && shield <= 0)
                 {
                     Die();
+                }
+
+                if (slowness < defaultSlowness)
+                {
+                    slowness += 1;
+                }
+
+                if (shield > 0)
+                {
+                    shield -= 1;
                 }
 
                 Draw(canvas);
@@ -283,7 +342,7 @@ namespace TRON.Avalonia{
                 switch (Type)
                 {
                     case "fuel":
-                        player.fuel = 30;
+                        player.fuel += 10;
                         break;
                     case "tail":
                         int addition = Random.Shared.Next(1, 3);
@@ -293,10 +352,13 @@ namespace TRON.Avalonia{
                         }
                         break;
                     case "bomb" :
-                        player.Die();
+                        if (player.shield <= 0)
+                        {
+                            player.Die();
+                        }
                         break;
                     default:
-                        player.items.Add(this);
+                        player.items.Push(this);
                         break;
                 }
 
@@ -306,6 +368,23 @@ namespace TRON.Avalonia{
                 tile.Left = this.Left;
                 tile.Right = this.Right;
                 return tile;
+            }
+
+            public void Use(Player player)
+            {
+                switch (Type)
+                {
+                    case "shield":
+                        player.shield += 15;
+                        break;
+                    case "speed":
+                        player.slowness -= 50;
+                        if (player.slowness < 30)
+                        {
+                            player.slowness = 30;
+                        }
+                        break;
+                }
             }
 
             public void Draw(Canvas? canvas)
