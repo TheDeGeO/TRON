@@ -294,14 +294,18 @@ namespace TRON.Avalonia{
 
                 foreach (Botcito bot in botcitos)
                 {
-                    if (bot.body.Contains(Position)) Die();
+                    if (bot.body.Contains(Position))
+                    {
+                        if (Position == bot.body[0]) bot.Die(tilemap);
+                        Die(tilemap.GetCenter());
+                    }
                 }
 
                 if (Position is Item item)
                 {
                     int x = item.X;
                     int y = item.Y;
-                    tilemap._tiles[x, y] = item.Take(this);
+                    tilemap._tiles[x, y] = item.Take(this, tilemap.GetCenter());
                 }
 
                 if (fuel > 0)
@@ -311,12 +315,12 @@ namespace TRON.Avalonia{
                 }
                 else if (fuel <= 0 && shield <= 0)
                 {
-                    Die();
+                    Die(tilemap.GetCenter());
                 }
 
                 if (Tail.Contains(Position) && shield <= 0)
                 {
-                    Die();
+                    Die(tilemap.GetCenter());
                 }
 
                 if (slowness < defaultSlowness)
@@ -340,11 +344,14 @@ namespace TRON.Avalonia{
                 return direction;
             }
 
-            public void Die()
+            public void Die(Tile spawnPoint)
             {
                 Console.WriteLine("YOU DIED!");
-                Color = Brushes.White;
+                Color = Brushes.GreenYellow;
+                shield = 5;
+                Position = spawnPoint;
                 Tail = new List<Tile>();
+                items = new();
                 Tile? tmp = Position;
                 Tail.Add(tmp!);
                 tmp = tmp?.Bottom;
@@ -366,7 +373,7 @@ namespace TRON.Avalonia{
                 Type = type;
             }
 
-            public Tile Take(Player player)
+            public Tile Take(Player player, Tile spawnPoint)
             {
                 switch (Type)
                 {
@@ -383,7 +390,7 @@ namespace TRON.Avalonia{
                     case "bomb" :
                         if (player.shield <= 0)
                         {
-                            player.Die();
+                            player.Die(spawnPoint);
                         }
                         break;
                     default:
@@ -489,20 +496,12 @@ namespace TRON.Avalonia{
 
                 var newHead = body[0];
                 var moved = false;
+                var maxTries = 20;
                 var tries = 0;
-                while (!moved)
+
+                while (!moved && tries < maxTries)
                 {
-                    if (tries > 5) moved = true;
-                    tries++;
-
                     int direction = Random.Shared.Next(0, 4);
-
-                    if (body[0] == null)
-                    {
-                        // Handle the case where body[0] is null
-                        Die(map);
-                        return;
-                    }
 
                     switch (direction)
                     {
@@ -520,29 +519,36 @@ namespace TRON.Avalonia{
                             break;
                     }
 
-                    if (newHead == null) continue;
-
-                    // Check for collisions with own body
-                    if (body.Contains(newHead)) continue;
-
-                    // Check for collisions with other bots
-                    foreach (var bot in botcitos)
+                    if (newHead == null || body.Contains(newHead))
                     {
-                        if (bot.body.Contains(newHead)) continue;
+                        tries++;
+                        continue;
                     }
 
-                    // Check for collisions with player (this makes them impossible to kill so i just make them die)
-                    if (player.Contains(newHead)) break;
+                    foreach (var bot in botcitos)
+                    {
+                        if (bot.body.Contains(newHead))
+                        {
+                            tries++;
+                            continue;
+                        }
+                    }
+
+                    if (player.Contains(newHead))
+                    {
+                        Die(map);
+                        return;
+                    }
 
                     // Move the bot
                     body.Insert(0, newHead);
                     body.RemoveAt(body.Count - 1);
                     moved = true;
                 }
+
                 if (!moved)
                 {
                     Die(map);
-                    return;
                 }
             }
 
