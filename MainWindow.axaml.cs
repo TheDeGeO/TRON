@@ -21,7 +21,10 @@ namespace TRON.Avalonia
         private MAP.Player _player;
         private int direct = 1;
         private Canvas? Canvas;
-        private DispatcherTimer _timer;
+        private DispatcherTimer _playerTimer;
+        private DispatcherTimer _botcitoTimer;
+        private int _botcitoSlowness = 300;
+        private int _botcitoAmount = 5;
         private List<MAP.Botcito> _botcitos = new List<MAP.Botcito>();
 
         public MainWindow()
@@ -46,8 +49,11 @@ namespace TRON.Avalonia
 
             KeyDown += MainWindow_KeyDown;
 
-            _timer = new DispatcherTimer(TimeSpan.FromMilliseconds(_player.slowness), DispatcherPriority.Normal, EventHandler);
-            _timer.Start();
+            _playerTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(_player.slowness), DispatcherPriority.Normal, EventHandler);
+            _playerTimer.Start();
+
+            _botcitoTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(_botcitoSlowness), DispatcherPriority.Normal, botHandler);
+            _botcitoTimer.Start();
 
             dataText.Foreground = new SolidColorBrush(Colors.White);
             dataText.Margin = new Thickness(10);
@@ -58,8 +64,8 @@ namespace TRON.Avalonia
             warning.Foreground = new SolidColorBrush(Colors.Red);
             warning.Margin = new Thickness(10);
 
-            //Add 10 botcitos
-            for (int i = 0; i < 10; i++)
+            //Add botcitos
+            for (int i = 0; i < _botcitoAmount; i++)
             {
                 _botcitos.Add(new MAP.Botcito(_tilemap.GetRandomTile(), 5));
             }
@@ -102,7 +108,7 @@ namespace TRON.Avalonia
         private void EventHandler(object? sender, EventArgs e)
         {
             _tilemap.Draw(Canvas);
-            direct = _player.Move(direct, Canvas, _tilemap);
+            direct = _player.Move(direct, Canvas, _tilemap, _botcitos);
 
             dataText.Text = $"Fuel: {_player.fuel} \nTail: {_player.Tail.Count} \nSlowness: {_player.slowness} \nShield: {_player.shield}";
 
@@ -114,7 +120,7 @@ namespace TRON.Avalonia
             }
             itemsText.Text = itemString;
 
-            _timer.Interval = TimeSpan.FromMilliseconds(_player.slowness);
+            _playerTimer.Interval = TimeSpan.FromMilliseconds(_player.slowness);
 
             if (_player.fuel <= 10)
             {
@@ -126,12 +132,23 @@ namespace TRON.Avalonia
             {
                 if (botcito.body.Count > 0)
                 {
-                    botcito.Move(_botcitos, _player.Tail);
                     botcito.Draw(Canvas);
                 }
                 
             }
             
+        }
+
+        private void botHandler(object? sender, EventArgs e)
+        {
+            foreach (MAP.Botcito botcito in _botcitos)
+            {
+                if (botcito.body.Count > 0)
+                {
+                    botcito.Move(_botcitos, _player.Tail, _tilemap);
+                }
+                
+            }
         }
 
     }

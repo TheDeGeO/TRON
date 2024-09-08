@@ -20,13 +20,14 @@ namespace TRON.Avalonia{
     public class MAP{
 
         //Tile size in pixels
-        public const int TILE_SIZE = 16;
+        public const int TILE_SIZE = 32;
         //Tilemap size
-        public const int MAP_WIDTH = 64 - 15;
-        public const int MAP_HEIGHT = 44;
+        public const int MAP_WIDTH = 32 - 8;
+        public const int MAP_HEIGHT = 22;
 
-        public const int itemAmount = 40;
-        public const int defaultSlowness = 150;
+        public const int itemStartAmount = 20;
+        public const int itemDeathAmount = 8;
+        public const int defaultSlowness = 300;
         public static readonly string[] itemTypes = {"fuel", "tail", "bomb", "shield", "speed"};
 
         public class Tile{
@@ -90,12 +91,12 @@ namespace TRON.Avalonia{
                     }
                 }
 
-                GenerateItems();
+                GenerateItems(itemStartAmount);
 
                 InitializeTileNeighbors();
             }
 
-            private void InitializeTileNeighbors()
+            public void InitializeTileNeighbors()
             {
                 for (int x = 0; x < Width; x++)
                 {
@@ -111,9 +112,9 @@ namespace TRON.Avalonia{
                 }
             }
 
-            public void GenerateItems()
+            public void GenerateItems(int amount)
             {
-                for (int i = 0; i < itemAmount; i++)
+                for (int i = 0; i < amount; i++)
                 {
                     int x = Random.Shared.Next(0, Width);
                     int y = Random.Shared.Next(0, Height);
@@ -205,10 +206,12 @@ namespace TRON.Avalonia{
             public int shield = 0;
             public double fuel = 30;
             public ItemStack<Item> items = new();
+            public IBrush Color;
 
             public Player(Tile position)
             {
                 Position = position;
+                Color = Brushes.White;
                 Tail = new List<Tile>();
                 Tile? tmp = Position;
                 for (int i = 0; i < 3 + 1; i++)
@@ -222,7 +225,7 @@ namespace TRON.Avalonia{
             {
                 for (int i = 0; i < Tail.Count; i++)
                 {
-                    Tail[i]?.Draw(canvas, Brushes.LightBlue);
+                    Tail[i]?.Draw(canvas, Brushes.Pink);
                 }
             }
 
@@ -234,7 +237,7 @@ namespace TRON.Avalonia{
                 {
                 Width = MAP.TILE_SIZE,
                 Height = MAP.TILE_SIZE,
-                Fill = Brushes.White, // Replace with your desired player color
+                Fill = Color,
                 Stroke = Brushes.White, // Replace with your desired player border color
                 StrokeThickness = 0.2,
                 };
@@ -244,7 +247,7 @@ namespace TRON.Avalonia{
             }
 
             //1 = up, -1 = down, 2 = left, -2 = right
-            public int Move(int direction, Canvas? canvas, Tilemap tilemap)
+            public int Move(int direction, Canvas? canvas, Tilemap tilemap, List<Botcito> botcitos)
             {
                 Tail.RemoveAt(Tail.Count - 1);
                 Tail.Insert(0, Position);
@@ -289,6 +292,11 @@ namespace TRON.Avalonia{
                     }
                 }
 
+                foreach (Botcito bot in botcitos)
+                {
+                    if (bot.body.Contains(Position)) Die();
+                }
+
                 if (Position is Item item)
                 {
                     int x = item.X;
@@ -313,12 +321,18 @@ namespace TRON.Avalonia{
 
                 if (slowness < defaultSlowness)
                 {
-                    slowness += 1;
+                    slowness += 10;
                 }
+                
 
                 if (shield > 0)
                 {
                     shield -= 1;
+                }
+                
+                if (slowness == defaultSlowness && shield == 0)
+                {
+                    Color = Brushes.White;
                 }
 
                 Draw(canvas);
@@ -329,7 +343,13 @@ namespace TRON.Avalonia{
             public void Die()
             {
                 Console.WriteLine("YOU DIED!");
-                Environment.Exit(0);
+                Color = Brushes.White;
+                Tail = new List<Tile>();
+                Tile? tmp = Position;
+                Tail.Add(tmp!);
+                tmp = tmp?.Bottom;
+                fuel = 15;
+                slowness = defaultSlowness;
             }
         }
 
@@ -385,13 +405,11 @@ namespace TRON.Avalonia{
                 {
                     case "shield":
                         player.shield += 15;
+                        player.Color = Brushes.GreenYellow;
                         break;
                     case "speed":
-                        player.slowness -= 50;
-                        if (player.slowness < 30)
-                        {
-                            player.slowness = 30;
-                        }
+                        player.slowness = 150;
+                        player.Color = Brushes.MediumPurple;
                         break;
                 }
             }
@@ -465,7 +483,7 @@ namespace TRON.Avalonia{
                 }
             }
 
-            public void Move(List<Botcito> botcitos, List<Tile> player)
+            public void Move(List<Botcito> botcitos, List<Tile> player, Tilemap map)
             {
                 if (!botcitos.Contains(this)) return;
 
@@ -482,7 +500,7 @@ namespace TRON.Avalonia{
                     if (body[0] == null)
                     {
                         // Handle the case where body[0] is null
-                        Die();
+                        Die(map);
                         return;
                     }
 
@@ -523,13 +541,15 @@ namespace TRON.Avalonia{
                 }
                 if (!moved)
                 {
-                    Die();
+                    Die(map);
                     return;
                 }
             }
 
-            public void Die()
+            public void Die(Tilemap map)
             {
+                map.GenerateItems(itemDeathAmount);
+                map.InitializeTileNeighbors();
                 body.Clear();
                 //botcitos.Remove(this);
                 Console.WriteLine("A botcito died!");

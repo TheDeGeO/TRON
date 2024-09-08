@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "upCa9LedeY7th+MWDZ/PMs1n/Ug9sdEzv9Y8i/56qEbiG95yDjGbGVRlvJAeBtLjbGWlAPU2ktr4DfIB2OdEsw==",
+  "dgSpecHash": "2KitL05zy5focudn2zTcCdLjirrd6iXj8bPFRm5hv1Udod/EguoUujL/Bd3fSwJZ5hku3toRArF4D3L5a3l7TA==",
   "success": true,
-  "projectFilePath": "/home/thedegeo/Documents/pry/TRON/TRON.Avalonia/TRON.Avalonia.csproj",
+  "projectFilePath": "/home/thedegeo/git/TRON/TRON.Avalonia.csproj",
   "expectedPackageFiles": [
     "/home/thedegeo/.nuget/packages/avalonia/11.1.0/avalonia.11.1.0.nupkg.sha512",
     "/home/thedegeo/.nuget/packages/avalonia.angle.windows.natives/2.1.22045.20230930/avalonia.angle.windows.natives.2.1.22045.20230930.nupkg.sha512",
@@ -33,8 +33,7 @@
     "/home/thedegeo/.nuget/packages/skiasharp.nativeassets.win32/2.88.8/skiasharp.nativeassets.win32.2.88.8.nupkg.sha512",
     "/home/thedegeo/.nuget/packages/system.io.pipelines/6.0.0/system.io.pipelines.6.0.0.nupkg.sha512",
     "/home/thedegeo/.nuget/packages/system.numerics.vectors/4.5.0/system.numerics.vectors.4.5.0.nupkg.sha512",
-    "/home/thedegeo/.nuget/packages/tmds.dbus.protocol/0.16.0/tmds.dbus.protocol.0.16.0.nupkg.sha512",
-    "/home/thedegeo/.nuget/packages/microsoft.aspnetcore.app.ref/8.0.7/microsoft.aspnetcore.app.ref.8.0.7.nupkg.sha512"
+    "/home/thedegeo/.nuget/packages/tmds.dbus.protocol/0.16.0/tmds.dbus.protocol.0.16.0.nupkg.sha512"
   ],
   "logs": []
 }
