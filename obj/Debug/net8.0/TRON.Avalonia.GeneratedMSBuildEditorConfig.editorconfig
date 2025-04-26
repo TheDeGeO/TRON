@@ -15,12 +15,14 @@ build_property.PlatformNeutralAssembly =
 build_property.EnforceExtendedAnalyzerRules = 
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = TRON.Avalonia
-build_property.ProjectDir = /home/thedegeo/git/TRON/
+build_property.ProjectDir = /home/thedegeo/gitclone/TRON/
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 
+build_property.EffectiveAnalysisLevelStyle = 8.0
+build_property.EnableCodeStyleSeverity = 
 
-[/home/thedegeo/git/TRON/App.axaml]
+[/home/thedegeo/gitclone/TRON/App.axaml]
 build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
 
-[/home/thedegeo/git/TRON/MainWindow.axaml]
+[/home/thedegeo/gitclone/TRON/MainWindow.axaml]
 build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml

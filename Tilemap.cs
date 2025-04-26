@@ -54,13 +54,35 @@ namespace TRON.Avalonia{
                 {
                     Width = TILE_SIZE,
                     Height = TILE_SIZE,
-                    Fill = color, // Replace with your desired tile color
-                    Stroke = Brushes.White, // Replace with your desired tile border color
+                    Fill = color,
+                    Stroke = Brushes.White,
                     StrokeThickness = 0.2,
                 };
                 Canvas.SetLeft(rect, X * TILE_SIZE);
                 Canvas.SetTop(rect, Y * TILE_SIZE);
                 canvas?.Children.Add(rect);
+            }
+
+            public void Draw(Canvas? canvas, IBrush color, List<Rectangle> recycledRects)
+            {
+                if (canvas == null || recycledRects == null || recycledRects.Count == 0) 
+                {
+                    Draw(canvas, color);
+                    return;
+                }
+                
+                // Get a recycled rectangle
+                var rect = recycledRects[recycledRects.Count - 1];
+                recycledRects.RemoveAt(recycledRects.Count - 1);
+                
+                // Configure the rectangle
+                rect.Fill = color;
+                rect.Stroke = Brushes.White;
+                Canvas.SetLeft(rect, X * TILE_SIZE);
+                Canvas.SetTop(rect, Y * TILE_SIZE);
+                
+                // Add to canvas
+                canvas.Children.Add(rect);
             }
         }
 
@@ -150,15 +172,83 @@ namespace TRON.Avalonia{
             {
                 canvas?.Children.Clear();
                 canvas!.Margin = new Thickness(leftMargin, topMargin, rightMargin, bottomMargin); 
+                DrawBaseLayer(canvas);
+                DrawItems(canvas);
+            }
+            
+            public void Draw(Canvas? canvas, List<Rectangle> recycledRects)
+            {
+                if (canvas == null) return;
+                
+                canvas.Children.Clear();
+                canvas.Margin = new Thickness(leftMargin, topMargin, rightMargin, bottomMargin);
+                DrawBaseLayer(canvas, recycledRects);
+                DrawItems(canvas, recycledRects);
+            }
+            
+            // Draw only the base tiles (background)
+            public void DrawBaseLayer(Canvas? canvas)
+            {
+                if (canvas == null) return;
+                
+                canvas!.Margin = new Thickness(leftMargin, topMargin, rightMargin, bottomMargin);
                 for (int x = 0; x < Width; x++)
                 {
                     for (int y = 0; y < Height; y++)
                     {
                         _tiles[x, y].Draw(canvas, Brushes.Black);
-
+                    }
+                }
+            }
+            
+            public void DrawBaseLayer(Canvas? canvas, List<Rectangle> recycledRects)
+            {
+                if (canvas == null) return;
+                
+                canvas.Margin = new Thickness(leftMargin, topMargin, rightMargin, bottomMargin);
+                for (int x = 0; x < Width; x++)
+                {
+                    for (int y = 0; y < Height; y++)
+                    {
+                        if (recycledRects.Count > 0)
+                            _tiles[x, y].Draw(canvas, Brushes.Black, recycledRects);
+                        else
+                            _tiles[x, y].Draw(canvas, Brushes.Black);
+                    }
+                }
+            }
+            
+            // Draw only the items
+            public void DrawItems(Canvas? canvas)
+            {
+                if (canvas == null) return;
+                
+                for (int x = 0; x < Width; x++)
+                {
+                    for (int y = 0; y < Height; y++)
+                    {
                         if (_tiles[x, y] is Item item)
                         {
                             item.Draw(canvas);
+                        }
+                    }
+                }
+            }
+            
+            public void DrawItems(Canvas? canvas, List<Rectangle> recycledRects)
+            {
+                if (canvas == null) return;
+                
+                for (int x = 0; x < Width; x++)
+                {
+                    for (int y = 0; y < Height; y++)
+                    {
+                        if (_tiles[x, y] is Item item)
+                        {
+                            if (recycledRects.Count > 0)
+                                item.Draw(canvas, recycledRects);
+                            else
+                                item.Draw(canvas);
                         }
                     }
                 }
@@ -229,6 +319,19 @@ namespace TRON.Avalonia{
                 }
             }
 
+            public void DrawTail(Canvas? canvas, List<Rectangle> recycledRects)
+            {
+                if (canvas == null) return;
+                
+                for (int i = 0; i < Tail.Count; i++)
+                {
+                    if (recycledRects.Count > 0)
+                        Tail[i]?.Draw(canvas, Brushes.Pink, recycledRects);
+                    else
+                        Tail[i]?.Draw(canvas, Brushes.Pink);
+                }
+            }
+
             public void Draw(Canvas? canvas)
             {
                 DrawTail(canvas);
@@ -238,60 +341,105 @@ namespace TRON.Avalonia{
                 Width = MAP.TILE_SIZE,
                 Height = MAP.TILE_SIZE,
                 Fill = Color,
-                Stroke = Brushes.White, // Replace with your desired player border color
+                Stroke = Brushes.White,
                 StrokeThickness = 0.2,
                 };
                 Canvas.SetLeft(rect, Position.X * MAP.TILE_SIZE);
                 Canvas.SetTop(rect, Position.Y * MAP.TILE_SIZE);
                 canvas?.Children.Add(rect);
             }
+            
+            public void Draw(Canvas? canvas, List<Rectangle> recycledRects)
+            {
+                if (canvas == null) return;
+                
+                DrawTail(canvas, recycledRects);
+                
+                if (recycledRects.Count > 0)
+                {
+                    // Get a recycled rectangle
+                    var rect = recycledRects[recycledRects.Count - 1];
+                    recycledRects.RemoveAt(recycledRects.Count - 1);
+                    
+                    // Configure the rectangle
+                    rect.Fill = Color;
+                    rect.Stroke = Brushes.White;
+                    Canvas.SetLeft(rect, Position.X * MAP.TILE_SIZE);
+                    Canvas.SetTop(rect, Position.Y * MAP.TILE_SIZE);
+                    
+                    // Add to canvas
+                    canvas.Children.Add(rect);
+                }
+                else
+                {
+                    var rect = new Rectangle()
+                    {
+                        Width = MAP.TILE_SIZE,
+                        Height = MAP.TILE_SIZE,
+                        Fill = Color,
+                        Stroke = Brushes.White,
+                        StrokeThickness = 0.2,
+                    };
+                    Canvas.SetLeft(rect, Position.X * MAP.TILE_SIZE);
+                    Canvas.SetTop(rect, Position.Y * MAP.TILE_SIZE);
+                    canvas.Children.Add(rect);
+                }
+            }
 
             //1 = up, -1 = down, 2 = left, -2 = right
             public int Move(int direction, Canvas? canvas, Tilemap tilemap, List<Botcito> botcitos)
             {
+                return Move(direction, tilemap, botcitos);
+            }
+            
+            public int Move(int direction, Tilemap tilemap, List<Botcito> botcitos)
+            {
+                // Add current position to tail and remove the last segment
                 Tail.RemoveAt(Tail.Count - 1);
                 Tail.Insert(0, Position);
 
+                // Handle movement based on direction
                 bool moved = false;
                 while (!moved)
                 {
                     switch (direction)
                     {
-                        case 1:
+                        case 1: // Up
                             if (Position.Top != null)
                             {
                                 Position = Position.Top;
                                 moved = true;
                             }
-                            else direction = -2;
+                            else direction = -2; // If can't move up, try right
                             break;
-                        case -1:
+                        case -1: // Down
                             if (Position.Bottom != null)
                             {
                                 Position = Position.Bottom;
                                 moved = true;
                             }
-                            else direction = 2;
+                            else direction = 2; // If can't move down, try left
                             break;
-                        case 2:
+                        case 2: // Left
                             if (Position.Left != null)
                             {
                                 Position = Position.Left;
                                 moved = true;
                             }
-                            else direction = 1;
+                            else direction = 1; // If can't move left, try up
                             break;
-                        case -2:
+                        case -2: // Right
                             if (Position.Right != null)
                             {
                                 Position = Position.Right;
                                 moved = true;
                             }
-                            else direction = -1;
+                            else direction = -1; // If can't move right, try down
                             break;
                     }
                 }
 
+                // Check collisions with bots
                 foreach (Botcito bot in botcitos)
                 {
                     if (bot.body.Contains(Position))
@@ -301,6 +449,7 @@ namespace TRON.Avalonia{
                     }
                 }
 
+                // Check if player picked up an item
                 if (Position is Item item)
                 {
                     int x = item.X;
@@ -308,6 +457,7 @@ namespace TRON.Avalonia{
                     tilemap._tiles[x, y] = item.Take(this, tilemap.GetCenter());
                 }
 
+                // Decrease fuel
                 if (fuel > 0)
                 {
                     fuel -= 0.2;
@@ -318,28 +468,29 @@ namespace TRON.Avalonia{
                     Die(tilemap.GetCenter());
                 }
 
+                // Check collision with own tail
                 if (Tail.Contains(Position) && shield <= 0)
                 {
                     Die(tilemap.GetCenter());
                 }
 
+                // Handle speed power-up effect decay
                 if (slowness < defaultSlowness)
                 {
                     slowness += 10;
                 }
                 
-
+                // Decrease shield if active
                 if (shield > 0)
                 {
                     shield -= 1;
                 }
                 
+                // Reset color when no power-ups are active
                 if (slowness == defaultSlowness && shield == 0)
                 {
                     Color = Brushes.White;
                 }
-
-                Draw(canvas);
 
                 return direction;
             }
@@ -451,12 +602,58 @@ namespace TRON.Avalonia{
                     Width = MAP.TILE_SIZE,
                     Height = MAP.TILE_SIZE,
                     Fill = fill, 
-                    Stroke = Brushes.White, // Replace with your desired item border color
+                    Stroke = Brushes.White,
                     StrokeThickness = 0.2,
                 };
                 Canvas.SetLeft(rect, X * MAP.TILE_SIZE);
                 Canvas.SetTop(rect, Y * MAP.TILE_SIZE);
                 canvas?.Children.Add(rect);
+            }
+
+            public void Draw(Canvas? canvas, List<Rectangle> recycledRects)
+            {
+                if (canvas == null) return;
+                
+                IBrush? fill = null;
+                switch (Type)
+                    {
+                        case "fuel": fill = Brushes.Green; break;
+                        case "tail": fill = Brushes.Blue; break;
+                        case "bomb": fill = Brushes.Red; break;
+                        case "shield": fill = Brushes.Orange; break;
+                        case "speed": fill = Brushes.Purple; break;
+                        default: fill = Brushes.Yellow; break;
+                    }
+                
+                if (recycledRects.Count > 0)
+                {
+                    // Get a recycled rectangle
+                    var rect = recycledRects[recycledRects.Count - 1];
+                    recycledRects.RemoveAt(recycledRects.Count - 1);
+                    
+                    // Configure the rectangle
+                    rect.Fill = fill;
+                    rect.Stroke = Brushes.White;
+                    Canvas.SetLeft(rect, X * MAP.TILE_SIZE);
+                    Canvas.SetTop(rect, Y * MAP.TILE_SIZE);
+                    
+                    // Add to canvas
+                    canvas.Children.Add(rect);
+                }
+                else
+                {
+                    var rect = new Rectangle()
+                    {
+                        Width = MAP.TILE_SIZE,
+                        Height = MAP.TILE_SIZE,
+                        Fill = fill, 
+                        Stroke = Brushes.White,
+                        StrokeThickness = 0.2,
+                    };
+                    Canvas.SetLeft(rect, X * MAP.TILE_SIZE);
+                    Canvas.SetTop(rect, Y * MAP.TILE_SIZE);
+                    canvas.Children.Add(rect);
+                }
             }
         }
 
@@ -465,34 +662,38 @@ namespace TRON.Avalonia{
 
             public Botcito(Tile head, int length)
             {
-                body.Add(head);
-
+                Tile? tmp = head;
                 for (int i = 0; i < length; i++)
                 {
-                    body.Add(head.Bottom!);
+                    body.Add(tmp!);
+                    tmp = tmp?.Bottom;
                 }
             }
 
             public void Draw(Canvas? canvas)
             {
-                var isHead = true;
-                foreach (var tile in body)
+                for (int i = 0; i < body.Count; i++)
                 {
-                    if (isHead)
-                    {
-                        tile.Draw(canvas, Brushes.White);
-                        isHead = false;
-                    }
+                    body[i]?.Draw(canvas, i == 0 ? Brushes.OrangeRed : Brushes.Brown);
+                }
+            }
+
+            public void Draw(Canvas? canvas, List<Rectangle> recycledRects)
+            {
+                if (canvas == null) return;
+                
+                for (int i = 0; i < body.Count; i++)
+                {
+                    if (recycledRects.Count > 0)
+                        body[i]?.Draw(canvas, i == 0 ? Brushes.OrangeRed : Brushes.Brown, recycledRects);
                     else
-                    {
-                        tile.Draw(canvas, Brushes.Aquamarine);
-                    }
+                        body[i]?.Draw(canvas, i == 0 ? Brushes.OrangeRed : Brushes.Brown);
                 }
             }
 
             public void Move(List<Botcito> botcitos, List<Tile> player, Tilemap map)
             {
-                if (!botcitos.Contains(this)) return;
+                if (!botcitos.Contains(this) || body.Count == 0) return;
 
                 var newHead = body[0];
                 var moved = false;
@@ -502,38 +703,41 @@ namespace TRON.Avalonia{
                 while (!moved && tries < maxTries)
                 {
                     int direction = Random.Shared.Next(0, 4);
-
+                    
+                    // More efficient direction checking
                     switch (direction)
                     {
-                        case 0:
-                            newHead = body[0].Top;
-                            break;
-                        case 1:
-                            newHead = body[0].Bottom;
-                            break;
-                        case 2:
-                            newHead = body[0].Left;
-                            break;
-                        case 3:
-                            newHead = body[0].Right;
-                            break;
+                        case 0: newHead = body[0].Top; break;
+                        case 1: newHead = body[0].Bottom; break;
+                        case 2: newHead = body[0].Left; break;
+                        case 3: newHead = body[0].Right; break;
                     }
 
+                    // Skip invalid moves
                     if (newHead == null || body.Contains(newHead))
                     {
                         tries++;
                         continue;
                     }
 
+                    // Check collision with other bots
+                    bool collisionWithBot = false;
                     foreach (var bot in botcitos)
                     {
-                        if (bot.body.Contains(newHead))
+                        if (bot != this && bot.body.Contains(newHead))
                         {
-                            tries++;
-                            continue;
+                            collisionWithBot = true;
+                            break;
                         }
                     }
+                    
+                    if (collisionWithBot)
+                    {
+                        tries++;
+                        continue;
+                    }
 
+                    // Check collision with player
                     if (player.Contains(newHead))
                     {
                         Die(map);
@@ -557,7 +761,6 @@ namespace TRON.Avalonia{
                 map.GenerateItems(itemDeathAmount);
                 map.InitializeTileNeighbors();
                 body.Clear();
-                //botcitos.Remove(this);
                 Console.WriteLine("A botcito died!");
             }
         }

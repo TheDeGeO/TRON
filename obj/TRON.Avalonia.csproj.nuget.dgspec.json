@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/home/thedegeo/git/TRON/TRON.Avalonia.csproj": {}
+    "/home/thedegeo/gitclone/TRON/TRON.Avalonia.csproj": {}
   },
   "projects": {
-    "/home/thedegeo/git/TRON/TRON.Avalonia.csproj": {
+    "/home/thedegeo/gitclone/TRON/TRON.Avalonia.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/thedegeo/git/TRON/TRON.Avalonia.csproj",
+        "projectUniqueName": "/home/thedegeo/gitclone/TRON/TRON.Avalonia.csproj",
         "projectName": "TRON.Avalonia",
-        "projectPath": "/home/thedegeo/git/TRON/TRON.Avalonia.csproj",
+        "projectPath": "/home/thedegeo/gitclone/TRON/TRON.Avalonia.csproj",
         "packagesPath": "/home/thedegeo/.nuget/packages/",
-        "outputPath": "/home/thedegeo/git/TRON/obj/",
+        "outputPath": "/home/thedegeo/gitclone/TRON/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/home/thedegeo/.nuget/NuGet/NuGet.Config"
@@ -32,7 +32,13 @@
           "warnAsError": [
             "NU1605"
           ]
-        }
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.100"
       },
       "frameworks": {
         "net8.0": {
@@ -70,12 +76,22 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[8.0.15, 8.0.15]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Host.linux-x64",
+              "version": "[8.0.15, 8.0.15]"
+            }
+          ],
           "frameworkReferences": {
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/8.0.108/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/9.0.105/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
